@@ -1,7 +1,15 @@
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import render, get_object_or_404
+from django.views.generic import ListView
 
 from mysite.blog.models import Post
+
+
+class PostListView(ListView):
+    queryset = Post.published.all()
+    context_object_name = 'posts'  # O padrão é 'object_list caso não seja informado
+    paginate_by = 3
+    template_name = 'blog/post/list.html'  # O padrão é blog/list.html
 
 
 def post_list(request):
