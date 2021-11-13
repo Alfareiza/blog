@@ -1,9 +1,10 @@
 from django.core.mail import send_mail
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponseRedirect
+from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView
 
-from mysite.blog.forms import EmailPostForm
+from mysite.blog.forms import EmailPostForm, CommentForm
 from mysite.blog.models import Post
 
 
@@ -30,12 +31,27 @@ def post_list(request):
 
 
 def post_detail(request, year, month, day, post):
-    post = get_object_or_404(Post, slug=post,
-                             status='published',
-                             publish__year=year,
-                             publish__month=month,
-                             publish__day=day)
-    return render(request, 'blog/post/detail.html', {'post': post})
+    post = get_object_or_404(Post, slug=post, status='published', publish__year=year,
+                             publish__month=month, publish__day=day)
+    comments = post.comments.filter(active=True)
+    new_comment = None
+    if request.method == 'POST':
+        # Se um comentário foi postado, captura os dados do comentário
+        comment_form = CommentForm(data=request.POST)
+        if comment_form.is_valid():
+            # Cria o objeto Comment, mas nao salva ainda no banco de dados
+            new_comment = comment_form.save(commit=False)
+            # Atribui a postagem atual ao comentario e dessa forma enxerga o primary key desde o foreign key
+            new_comment.post = post
+            # Salve o comentario no banco de dados
+            new_comment.save()
+            return redirect(post)
+    else:
+        comment_form = CommentForm()
+
+    return render(request, 'blog/post/detail.html',
+                  {'post': post, 'comments': comments,
+                   'new_comment': new_comment, 'comment_form': comment_form})
 
 
 def post_share(request, post_id):
