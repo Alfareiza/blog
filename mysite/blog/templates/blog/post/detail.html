@@ -13,6 +13,7 @@
         <a href="{% url 'blog:post_share' post.id %}">
             Share this post
         </a>
+        <p class="tags">Tags: {{ post.tags.all|join:", " }}</p>
     </p>
     {% with comments.count as total_comments %}
     <h2>
