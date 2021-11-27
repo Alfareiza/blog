@@ -17,5 +17,7 @@ urlpatterns = [
     path('<int:post_id>/share/', views.post_share, name='post_share'),
     # Pág 107
     path('feed/', LatestPostsFeed(), name='post_feed'),
+    # Pág 113
+    path('search/', views.post_search, name='post_search'),
 
 ]
