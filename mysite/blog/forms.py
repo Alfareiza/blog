@@ -17,3 +17,10 @@ class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
         fields = ('name', 'email', 'body')
+
+
+class SearchForm(forms.Form):
+    """
+    O campo query vai possuir o valor inserido pelo usuário
+    """
+    query = forms.CharField()
