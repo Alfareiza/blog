@@ -1,20 +1,26 @@
-from django.contrib.postgres.search import SearchVector
+from django.contrib.postgres.search import (
+    SearchQuery,
+    SearchRank,
+    SearchVector,
+)
 from django.core.mail import send_mail
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView
 from taggit.models import Tag
 
-from mysite.blog.forms import EmailPostForm, CommentForm, SearchForm
+from mysite.blog.forms import CommentForm, EmailPostForm, SearchForm
 from mysite.blog.models import Post
 
 
 class PostListView(ListView):
     queryset = Post.published.all()
-    context_object_name = 'posts'  # O padrão é 'object_list caso não seja informado
+    context_object_name = (
+        "posts"  # O padrão é 'object_list caso não seja informado
+    )
     paginate_by = 3
-    template_name = 'blog/post/list.html'  # O padrão é blog/list.html
+    template_name = "blog/post/list.html"  # O padrão é blog/list.html
 
 
 def post_list(request, tag_slug=None):
@@ -28,7 +34,7 @@ def post_list(request, tag_slug=None):
         object_list = object_list.filter(tags__in=[tag])
 
     paginator = Paginator(object_list, 3)  # tres postagens em cada página
-    page = request.GET.get('page')
+    page = request.GET.get("page")
     try:
         posts = paginator.page(page)
     except PageNotAnInteger:
@@ -37,15 +43,25 @@ def post_list(request, tag_slug=None):
     except EmptyPage:
         # Se a página estiver fora fo intervalo, exibe a última página de resultados
         posts = paginator.page(paginator.num_pages)
-    return render(request, 'blog/post/list.html', {'posts': posts, 'page': page, 'tag': tag})
+    return render(
+        request,
+        "blog/post/list.html",
+        {"posts": posts, "page": page, "tag": tag},
+    )
 
 
 def post_detail(request, year, month, day, post):
-    post = get_object_or_404(Post, slug=post, status='published', publish__year=year,
-                             publish__month=month, publish__day=day)
+    post = get_object_or_404(
+        Post,
+        slug=post,
+        status="published",
+        publish__year=year,
+        publish__month=month,
+        publish__day=day,
+    )
     comments = post.comments.filter(active=True)
     new_comment = None
-    if request.method == 'POST':
+    if request.method == "POST":
         # Se um comentário foi postado, captura os dados do comentário
         comment_form = CommentForm(data=request.POST)
         if comment_form.is_valid():
@@ -61,37 +77,52 @@ def post_detail(request, year, month, day, post):
 
     # Pag. 87
     # Lista de id de tags do post atual. Ex.: <QuerySet [3, 5]>
-    post_tags_ids = post.tags.values_list('id', flat=True)
+    post_tags_ids = post.tags.values_list("id", flat=True)
 
     # Lista de postagens semelhantes Ex. :<QuerySet [<Post:  __str__ do model>, <Post: __str__ do model >]>
-    similar_posts = Post.published.filter(tags__in=post_tags_ids).exclude(id=post.id)
+    similar_posts = Post.published.filter(tags__in=post_tags_ids).exclude(
+        id=post.id
+    )
 
     # Lista dos 4 primeiros objetos tipo posts baseado no atributo criado -same_tags-
-    similar_posts = similar_posts.annotate(same_tags=Count('tags')).order_by('-same_tags', '-publish')[:4]
+    similar_posts = similar_posts.annotate(same_tags=Count("tags")).order_by(
+        "-same_tags", "-publish"
+    )[:4]
 
-    return render(request, 'blog/post/detail.html',
-                  {'post': post, 'comments': comments,
-                   'new_comment': new_comment, 'comment_form': comment_form,
-                   'similar_posts': similar_posts})
+    return render(
+        request,
+        "blog/post/detail.html",
+        {
+            "post": post,
+            "comments": comments,
+            "new_comment": new_comment,
+            "comment_form": comment_form,
+            "similar_posts": similar_posts,
+        },
+    )
 
 
 def post_share(request, post_id):
     # Obtém a postagem com base no id
-    post = get_object_or_404(Post, id=post_id, status='published')
+    post = get_object_or_404(Post, id=post_id, status="published")
     sent = False
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = EmailPostForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data  # cd recebe um dict com os valores obtidos
             post_url = request.build_absolute_uri(post.get_absolute_url())
             subject = f"{cd['name']} te recomenda ler {post.title}"
-            message = f"Te recomendo que leia o post \'{post.title}\' em {post_url}\n\nComentários de {cd['name']}: {cd['comments']}"
-            send_mail(subject, message, 'alfareiza@gmail.com', [cd['to']])
+            message = f"Te recomendo que leia o post '{post.title}' em {post_url}\n\nComentários de {cd['name']}: {cd['comments']}"
+            send_mail(subject, message, "alfareiza@gmail.com", [cd["to"]])
             sent = True
     else:
         form = EmailPostForm()
-    return render(request, 'blog/post/share.html', {'post': post, 'form': form, 'sent': sent})
+    return render(
+        request,
+        "blog/post/share.html",
+        {"post": post, "form": form, "sent": sent},
+    )
 
 
 def post_search(request):
@@ -103,10 +134,30 @@ def post_search(request):
     # palavra 'query' quer dizer que a pessoa submeteu o form e entra no if
 
     # Ex. de request.GEt: <QueryDict: {'query': ['artista']}>
-    if 'query' in request.GET:
+    if "query" in request.GET:
         form = SearchForm(request.GET)
         if form.is_valid():
-            query = form.cleaned_data['query']
-            results = Post.published.annotate(search=SearchVector('title', 'body'), ).filter(search=query)
+            query = form.cleaned_data["query"]
+            # Faz a pesquisa baseado em 2 valores, https://docs.djangoproject.com/en/4.0/ref/contrib/postgres/search/#searchvector
+            # results = Post.published.annotate(search=SearchVector('title', 'body'), ).filter(search=query)
+            # Aplicando stemming na pesquisa, e atribuindo peso às consultas
+            search_vector = SearchVector("title", weight="A") + SearchVector(
+                "body", weight="B"
+            )  # SearchVector(F(title) || ' ' || F(body))
+            search_query = SearchQuery(query)  # SearchQuery(Value(artist))
+            results = (
+                Post.published.annotate(
+                    search=search_vector,
+                    rank=SearchRank(search_vector, search_query),
+                )
+                .filter(rank__gte=0.3)
+                .order_by("-rank")
+            )
+            # results é um queryset com os objetos tipo post encontrados, ex.:
+            # <QuerySet [<Post: La vida del artista>, <Post: Mi Ahijado>, <Post: La Fama>]>
 
-    return render(request, 'blog/post/search.html', {'form': form, 'query': query, 'results': results})
+    return render(
+        request,
+        "blog/post/search.html",
+        {"form": form, "query": query, "results": results},
+    )
