@@ -20,15 +20,15 @@ def total_posts():
     return Post.published.count()
 
 
-@register.inclusion_tag('blog/post/latest_posts.html')
+@register.inclusion_tag("blog/post/latest_posts.html")
 def show_latest_posts(count=5):
-    """"
+    """ "
     O arquivo blog/post/latest_posts.html trata o resultado desta função.
     Dessa forma em qualquer parte do projeto pode ser chamado o {% show_latest_posts # %}
     E vai retornar o template renderizado com o chamado dessa função.
     """
-    latest_posts = Post.published.order_by('-publish')[:count]
-    return {'latest_posts': latest_posts}
+    latest_posts = Post.published.order_by("-publish")[:count]
+    return {"latest_posts": latest_posts}
 
 
 @register.simple_tag
@@ -40,10 +40,12 @@ def get_most_commented_posts(count=5):
     count limita o número total de objetos devolvidos.
     Retorna um QuerySet com os objetos mais comentados.
     """
-    return Post.published.annotate(total_comments=Count('comments')).order_by('-total_comments')[:count]
+    return Post.published.annotate(total_comments=Count("comments")).order_by(
+        "-total_comments"
+    )[:count]
 
 
-@register.filter(name='markdown')
+@register.filter(name="markdown")
 def markdown_format(text):
     """
 

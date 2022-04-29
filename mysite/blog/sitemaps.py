@@ -14,14 +14,15 @@ class PostSitemap(Sitemap):
     você expresse essas informações em código Python.
     """
 
-    changefreq = 'weekly'
+    changefreq = "weekly"
     priority = 0.9
 
     # changefreq e priority informam a frequência de mudança das páginas e sua relevância no site (valor máximo é 1)
 
     def items(self):
         """
-        @return: Query set dos objetos a serem incluidos nesse mapa de site. O padrão é chamar o get_absolute_url() de cada objeto
+        @return: Query set dos objetos a serem incluidos nesse mapa de site.
+        O padrão é chamar o get_absolute_url() de cada objeto
         """
         return Post.published.all()
 

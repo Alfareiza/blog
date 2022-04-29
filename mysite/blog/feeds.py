@@ -8,9 +8,9 @@ from mysite.blog.models import Post
 
 # Pág 106
 class LatestPostsFeed(Feed):
-    title = 'My blog'
-    link = reverse_lazy('blog:post_list')
-    description = 'Newposts of my blog.'
+    title = "My blog"
+    link = reverse_lazy("blog:post_list")
+    description = "Newposts of my blog."
 
     def items(self):
         """
